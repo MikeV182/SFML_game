@@ -36,6 +36,20 @@ sf::Vector2f EnemyMove(sf::RectangleShape enemy, sf::Vector2f posPlayer, sf::Vec
 	return enemy.getPosition();
 }
 
+bool collisionDetect(sf::RectangleShape player, sf::RectangleShape enemy) {
+	if (player.getGlobalBounds().intersects(enemy.getGlobalBounds())) {
+		return true;
+	}
+
+	else return false;
+}
+
+void gameLose(void) {
+}
+
+void gameWin(void) {
+}
+
 int main() {
 	sf::RenderWindow window(sf::VideoMode(1600,1200), "CUBE CHASER - WAVE: 0 - TIME LEFT: 15 - WAVES LEFT: 10", sf::Style::Default);
 
@@ -81,6 +95,10 @@ int main() {
 
 			sf::Vector2f posEnemy = enemy.getPosition();
 			enemy.setPosition(EnemyMove(enemy, posPlayer, posEnemy));
+
+			if (collisionDetect(player, enemy)) {
+				gameLose();
+			}
 
 			window.draw(enemy);
 			window.draw(player);
