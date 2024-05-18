@@ -3,6 +3,8 @@
 #include <sstream>
 #include <chrono>
 
+#define FONT_SIZE 120
+
 sf::RectangleShape CreatePlayer() {
 	sf::RectangleShape player(sf::Vector2f(150.0f, 150.0f));
 	player.setFillColor(sf::Color::Green);
@@ -44,10 +46,28 @@ bool collisionDetect(sf::RectangleShape player, sf::RectangleShape enemy) {
 	else return false;
 }
 
-void gameLose(void) {
+sf::Text gameLose(const sf::Font& font) {
+	sf::Text txt;
+	txt.setFont(font);
+	txt.setString("You lose");
+	txt.setCharacterSize(FONT_SIZE);
+	txt.setFillColor(sf::Color::Cyan);
+	txt.setStyle(sf::Text::Bold);
+	txt.setPosition(1600.0f / 2.0f, 1200.0f / 2.0f);
+
+	return txt;
 }
 
-void gameWin(void) {
+sf::Text gameWin(const sf::Font& font) {
+	sf::Text txt;
+	txt.setFont(font);
+	txt.setString("You Win");
+	txt.setCharacterSize(FONT_SIZE);
+	txt.setFillColor(sf::Color::Cyan);
+	txt.setStyle(sf::Text::Bold);
+	txt.setPosition(1600.0f / 2.0f, 1200.0f / 2.0f);
+
+	return txt;
 }
 
 int main() {
@@ -55,19 +75,29 @@ int main() {
 
 	sf::RectangleShape player = CreatePlayer();
 	sf::RectangleShape enemy = CreateEnemy();
+
+	sf::Font font;
+	if (!font.loadFromFile("fonts/Freedom.ttf")) {
+		std::cerr << "Failed to load font" << std::endl;
+		return -1;
+	}
 	
-	int curWave = 0, seconds = 15;
+	int curWave = 0, seconds = 15, suspended = 0;
 	auto start = std::chrono::high_resolution_clock::now();
 	while (window.isOpen()) {
+		sf::Event evnt;
+		while (window.pollEvent(evnt)) {
+			switch (evnt.type) {
+			case sf::Event::Closed:
+				std::cout << "Window is closed\n";
+				window.close();
+				break;
+			}
+		}
 
 		int nextRound = 0, timeRound = 15;
-		while (!nextRound && window.isOpen()) {
-			
-			std::ostringstream oss;
-			oss << "CUBE CHASER - WAVE: " << curWave << " - TIME LEFT: " << timeRound << " - WAVES LEFT: " << 10 - curWave;
-			window.setTitle(oss.str());
+		while (!nextRound && !suspended && window.isOpen() && (10 - curWave != 0)) {
 
-			sf::Event evnt;
 			while (window.pollEvent(evnt)) {
 				switch (evnt.type) {
 				case sf::Event::Closed:
@@ -76,6 +106,10 @@ int main() {
 					break;
 				}
 			}
+			
+			std::ostringstream oss;
+			oss << "CUBE CHASER - WAVE: " << curWave << " - TIME LEFT: " << timeRound << " - WAVES LEFT: " << 10 - curWave;
+			window.setTitle(oss.str());
 
 			sf::Vector2f posPlayer = player.getPosition();
 			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) && posPlayer.x + 75.0f < 1600.0f) {
@@ -97,7 +131,7 @@ int main() {
 			enemy.setPosition(EnemyMove(enemy, posPlayer, posEnemy));
 
 			if (collisionDetect(player, enemy)) {
-				gameLose();
+				suspended = 1;
 			}
 
 			window.draw(enemy);
@@ -111,8 +145,25 @@ int main() {
 				nextRound = 1;
 				seconds += 15;
 			}
+
 		}
-		curWave += 1;
+
+		if (suspended) {
+			sf::Text text = gameLose(font);
+			window.clear(sf::Color::Black);
+			window.draw(text);
+			window.display();
+		}
+
+		else if (10 - curWave == 0 && !suspended) {
+			sf::Text text = gameWin(font);
+			window.clear(sf::Color::Black);
+			window.draw(text);
+			window.display();
+		}
+
+		else curWave += 1;
+
 	}
 
 	return 0;
