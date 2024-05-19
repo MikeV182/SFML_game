@@ -3,36 +3,44 @@
 #include <sstream>
 #include <chrono>
 
+#define SCREEN_W 1600
+#define SCREEN_H 1200
 #define FONT_SIZE 120
+#define QUBE_SIZE 150.0f
+#define QUBE_ORIGIN (QUBE_SIZE / 2)
+#define PLAYER_SPEED 0.15f
+#define ENEMY_SPEED (PLAYER_SPEED / 3)
+#define ROUND_TIME 15
+#define ROUNDS_TOTAL 10
 
 sf::RectangleShape CreatePlayer() {
-	sf::RectangleShape player(sf::Vector2f(150.0f, 150.0f));
+	sf::RectangleShape player(sf::Vector2f(QUBE_SIZE,QUBE_SIZE));
 	player.setFillColor(sf::Color::Green);
-	player.setOrigin(75.0f, 75.0f);
-	player.setPosition(800, 600);
+	player.setOrigin(QUBE_ORIGIN,QUBE_ORIGIN);
+	player.setPosition(SCREEN_W / 2,SCREEN_H / 2);
 	return player;
 }
 
 sf::RectangleShape CreateEnemy() {
-	sf::RectangleShape enemy(sf::Vector2f(150.0f, 150.0f));
+	sf::RectangleShape enemy(sf::Vector2f(QUBE_SIZE,QUBE_SIZE));
 	enemy.setFillColor(sf::Color::Red);
-	enemy.setOrigin(75.0f, 75.0f);
+	enemy.setOrigin(QUBE_ORIGIN,QUBE_ORIGIN);
 	enemy.setPosition(1300, 1000);
 	return enemy;
 }
 
 sf::Vector2f EnemyMove(sf::RectangleShape enemy, sf::Vector2f posPlayer, sf::Vector2f posEnemy) {
 	if (posEnemy.x > posPlayer.x) {
-		enemy.move(-0.05f, 0.0f);
+		enemy.move(-ENEMY_SPEED, 0.0f);
 	}
 	if (posEnemy.x < posPlayer.x) {
-		enemy.move(+0.05f, 0.0f);
+		enemy.move(+ENEMY_SPEED, 0.0f);
 	}
 	if (posEnemy.y > posPlayer.y) {
-		enemy.move(0.0f, -0.05f);
+		enemy.move(0.0f, -ENEMY_SPEED);
 	}
 	if (posEnemy.y < posPlayer.y) {
-		enemy.move(0.0f, +0.05f);
+		enemy.move(0.0f, +ENEMY_SPEED);
 	}
 
 	return enemy.getPosition();
@@ -46,32 +54,20 @@ bool collisionDetect(sf::RectangleShape player, sf::RectangleShape enemy) {
 	else return false;
 }
 
-sf::Text gameLose(const sf::Font& font) {
+sf::Text gameStatus(const sf::Font& font, std::string line) {
 	sf::Text txt;
 	txt.setFont(font);
-	txt.setString("You lose");
+	txt.setString(line);
 	txt.setCharacterSize(FONT_SIZE);
 	txt.setFillColor(sf::Color::Cyan);
 	txt.setStyle(sf::Text::Bold);
-	txt.setPosition(1600.0f / 2.0f, 1200.0f / 2.0f);
-
-	return txt;
-}
-
-sf::Text gameWin(const sf::Font& font) {
-	sf::Text txt;
-	txt.setFont(font);
-	txt.setString("You Win");
-	txt.setCharacterSize(FONT_SIZE);
-	txt.setFillColor(sf::Color::Cyan);
-	txt.setStyle(sf::Text::Bold);
-	txt.setPosition(1600.0f / 2.0f, 1200.0f / 2.0f);
+	txt.setPosition(SCREEN_W / 2, SCREEN_H / 2);
 
 	return txt;
 }
 
 int main() {
-	sf::RenderWindow window(sf::VideoMode(1600,1200), "CUBE CHASER - WAVE: 0 - TIME LEFT: 15 - WAVES LEFT: 10", sf::Style::Default);
+	sf::RenderWindow window(sf::VideoMode(SCREEN_W,SCREEN_H), "CUBE CHASER - WAVE: 0 - TIME LEFT: 15 - WAVES LEFT: 10", sf::Style::Default);
 
 	sf::RectangleShape player = CreatePlayer();
 	sf::RectangleShape enemy = CreateEnemy();
@@ -82,7 +78,7 @@ int main() {
 		return -1;
 	}
 	
-	int curWave = 0, seconds = 15, suspended = 0;
+	int curWave = 0, seconds = ROUND_TIME, suspended = 0;
 	auto start = std::chrono::high_resolution_clock::now();
 	while (window.isOpen()) {
 		sf::Event evnt;
@@ -95,8 +91,8 @@ int main() {
 			}
 		}
 
-		int nextRound = 0, timeRound = 15;
-		while (!nextRound && !suspended && window.isOpen() && (10 - curWave != 0)) {
+		int nextRound = 0, timeRound = ROUND_TIME;
+		while (!nextRound && !suspended && window.isOpen() && (ROUNDS_TOTAL - curWave != 0)) {
 
 			while (window.pollEvent(evnt)) {
 				switch (evnt.type) {
@@ -108,21 +104,21 @@ int main() {
 			}
 			
 			std::ostringstream oss;
-			oss << "CUBE CHASER - WAVE: " << curWave << " - TIME LEFT: " << timeRound << " - WAVES LEFT: " << 10 - curWave;
+			oss << "CUBE CHASER - WAVE: " << curWave << " - TIME LEFT: " << timeRound << " - WAVES LEFT: " << ROUNDS_TOTAL - curWave;
 			window.setTitle(oss.str());
 
 			sf::Vector2f posPlayer = player.getPosition();
-			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) && posPlayer.x + 75.0f < 1600.0f) {
-				player.move(+0.1f, 0.0f);
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) && posPlayer.x + QUBE_ORIGIN < SCREEN_W) {
+				player.move(+PLAYER_SPEED, 0.0f);
 			}
-			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) && posPlayer.x - 75.0f > 0.0f) {
-				player.move(-0.1f, 0.0f);
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) && posPlayer.x - QUBE_ORIGIN > 0.0f) {
+				player.move(-PLAYER_SPEED, 0.0f);
 			}
-			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) && posPlayer.y - 75.0f > 0.0f) {
-				player.move(0.0f, -0.1f);
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) && posPlayer.y - QUBE_ORIGIN > 0.0f) {
+				player.move(0.0f, -PLAYER_SPEED);
 			}
-			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) && posPlayer.y + 75.0f < 1200.0f) {
-				player.move(0.0f, +0.1f);
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) && posPlayer.y + QUBE_ORIGIN < SCREEN_H) {
+				player.move(0.0f, +PLAYER_SPEED);
 			}
 
 			window.clear(sf::Color::Black);
@@ -140,23 +136,23 @@ int main() {
 
 			auto stop = std::chrono::high_resolution_clock::now();
 			std::chrono::duration<float> duration = stop - start;
-			timeRound = 15 * (curWave+1) - static_cast<int>(duration.count());
+			timeRound = ROUND_TIME * (curWave+1) - static_cast<int>(duration.count());
 			if (duration.count() >= seconds) {
 				nextRound = 1;
-				seconds += 15;
+				seconds += ROUND_TIME;
 			}
 
 		}
 
 		if (suspended) {
-			sf::Text text = gameLose(font);
+			sf::Text text = gameStatus(font, "You lose");
 			window.clear(sf::Color::Black);
 			window.draw(text);
 			window.display();
 		}
 
-		else if (10 - curWave == 0 && !suspended) {
-			sf::Text text = gameWin(font);
+		else if (ROUNDS_TOTAL - curWave == 0 && !suspended) {
+			sf::Text text = gameStatus(font, "You win");
 			window.clear(sf::Color::Black);
 			window.draw(text);
 			window.display();
