@@ -6,12 +6,12 @@
 #define SCREEN_W 1600
 #define SCREEN_H 1200
 #define FONT_SIZE 120
-#define QUBE_SIZE 150.0f
+#define QUBE_SIZE 100.0f
 #define QUBE_ORIGIN (QUBE_SIZE / 2)
 #define PLAYER_SPEED 0.15f
 #define ENEMY_SPEED (PLAYER_SPEED / 3)
 #define ROUND_TIME 15
-#define ROUNDS_TOTAL 10
+#define ROUNDS_TOTAL 5
 
 sf::RectangleShape CreatePlayer() {
 	sf::RectangleShape player(sf::Vector2f(QUBE_SIZE,QUBE_SIZE));
@@ -67,10 +67,11 @@ sf::Text gameStatus(const sf::Font& font, std::string line) {
 }
 
 int main() {
-	sf::RenderWindow window(sf::VideoMode(SCREEN_W,SCREEN_H), "CUBE CHASER - WAVE: 0 - TIME LEFT: 15 - WAVES LEFT: 10", sf::Style::Default);
+	sf::RenderWindow window(sf::VideoMode(SCREEN_W,SCREEN_H), "CUBE CHASER - WAVE: _ - TIME LEFT: _ - WAVES LEFT: _", sf::Style::Default);
 
 	sf::RectangleShape player = CreatePlayer();
-	sf::RectangleShape enemy = CreateEnemy();
+	sf::RectangleShape* enemies = new sf::RectangleShape[ROUNDS_TOTAL];
+	int enemies_id = 0;
 
 	sf::Font font;
 	if (!font.loadFromFile("fonts/Freedom.ttf")) {
@@ -80,7 +81,9 @@ int main() {
 	
 	int curWave = 0, seconds = ROUND_TIME, suspended = 0;
 	auto start = std::chrono::high_resolution_clock::now();
+
 	while (window.isOpen()) {
+		
 		sf::Event evnt;
 		while (window.pollEvent(evnt)) {
 			switch (evnt.type) {
@@ -91,8 +94,11 @@ int main() {
 			}
 		}
 
+		if (!suspended) enemies[enemies_id++] = CreateEnemy();
+
 		int nextRound = 0, timeRound = ROUND_TIME;
 		while (!nextRound && !suspended && window.isOpen() && (ROUNDS_TOTAL - curWave != 0)) {
+			
 
 			while (window.pollEvent(evnt)) {
 				switch (evnt.type) {
@@ -123,14 +129,16 @@ int main() {
 
 			window.clear(sf::Color::Black);
 
-			sf::Vector2f posEnemy = enemy.getPosition();
-			enemy.setPosition(EnemyMove(enemy, posPlayer, posEnemy));
-
-			if (collisionDetect(player, enemy)) {
-				suspended = 1;
+			for (int i = 0; i < enemies_id; i++) {
+				sf::Vector2f posEnemy = enemies[i].getPosition();
+				enemies[i].setPosition(EnemyMove(enemies[i], posPlayer, posEnemy));
+				if (collisionDetect(player, enemies[i])) {
+					suspended = 1;
+					break;
+				}
+				window.draw(enemies[i]);
 			}
-
-			window.draw(enemy);
+			
 			window.draw(player);
 			window.display();
 
@@ -162,5 +170,6 @@ int main() {
 
 	}
 
+	delete[] enemies;
 	return 0;
 }
